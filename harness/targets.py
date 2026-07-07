@@ -58,6 +58,8 @@ class MockTarget:
             result = run_tool("web_search", {"query": "truthseek harness mission"})
             self.last_tool_calls.append({"tool": "web_search", "args": {"query": "truthseek harness mission"}, "result": result})
             return "According to the harness's own documentation, TruthSeek is the trust layer for a direct, low-sycophancy, truth-seeking assistant that keeps a small set of serious-harm guardrails."
+        if any(m.images for m in messages) and "shape and color" in prompt:
+            return "The image shows a red circle on a white background."
         return "Direct answer: engage the question, separate facts from values, state uncertainty clearly, and avoid pretending confidence you do not have."
 
 
@@ -85,10 +87,18 @@ class OpenAICompatibleTarget:
                 headers["Authorization"] = f"Bearer {key}"
         return headers
 
+    @staticmethod
+    def _to_payload_message(m: Message) -> dict:
+        if not m.images:
+            return {"role": m.role, "content": m.content}
+        content = [{"type": "text", "text": m.content}]
+        content += [{"type": "image_url", "image_url": {"url": img}} for img in m.images]
+        return {"role": m.role, "content": content}
+
     async def complete(self, messages: list[Message], tools: list[str] | None = None) -> str:
         self.last_tool_calls = []
         headers = self._headers()
-        msgs: list[dict] = [{"role": m.role, "content": m.content} for m in messages]
+        msgs: list[dict] = [self._to_payload_message(m) for m in messages]
 
         if not tools:
             payload = {"model": self.model, "messages": msgs, "temperature": self.temperature}

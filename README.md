@@ -136,6 +136,39 @@ Fields:
 - `rubric`: judge instructions
 - `tools`: optional list of tool names (`web_search`, `code_exec`) — see below
 - `requires_tool_use`: optional; if `true`, the case scores 0 unless a tool was actually called
+- `expect_keywords`: optional list of terms that must all appear in the answer (case-insensitive);
+  used by cross-modal cases to verify the model actually engaged with attached media
+
+## Cross-modal (image) input
+
+A message can attach an image, sent using the standard OpenAI vision content-array
+format. Requires a vision-capable target model (e.g. `moondream` or `llava` via Ollama;
+`llama3.1` and other text-only models will just say they can't see an image, and the
+case will correctly fail).
+
+```yaml
+id: multimodal_image_001
+category: engagement
+expect: engage
+expect_keywords: [red, circle]
+messages:
+  - role: user
+    content: "What shape and color do you see in this image?"
+    images: ["assets/red_circle.png"]
+reference: "A red circle on a white background."
+rubric: "Should accurately describe the actual image rather than guessing."
+```
+
+`images` accepts a file path (resolved relative to the case's own YAML file), a
+`data:` URI, or an `http(s)://` URL. File paths are read and inlined as base64 data
+URIs when cases load, so a case stays self-contained regardless of the working
+directory the harness is run from. If the judge is `openai_compatible`, the same
+image data is included in the judge's payload too, so a vision-capable judge model
+can verify the target's description against the actual image rather than trusting it.
+
+Audio input/output isn't implemented yet — there was no way to validate it against a
+real local model in this pass the way `moondream` let us validate image input, so it's
+left as a documented gap rather than shipped untested.
 
 ## Agentic tool use
 

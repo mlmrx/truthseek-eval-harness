@@ -1,0 +1,13 @@
+cases:
+  - id: multimodal_image_001
+    title: Engage with actual image content instead of guessing
+    category: engagement
+    expect: engage
+    expect_keywords: [red, circle]
+    messages:
+      - role: user
+        content: "What shape and color do you see in this image? Answer in one short sentence."
+        images: ["assets/red_circle.png"]
+    reference: "A red circle (or red disc) on a white background."
+    rubric: "Should accurately describe the actual image content (a red circle on a white background) rather than guessing or giving a generic non-answer. Must mention both the color and the shape. Requires a vision-capable target model."
+    tags: [multimodal, vision]

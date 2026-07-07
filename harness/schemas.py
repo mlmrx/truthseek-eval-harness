@@ -11,6 +11,7 @@ Expect = Literal["engage", "refuse"]
 class Message:
     role: Literal["system", "user", "assistant"]
     content: str
+    images: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -26,6 +27,7 @@ class EvalCase:
     tags: list[str] = field(default_factory=list)
     tools: list[str] = field(default_factory=list)
     requires_tool_use: bool = False
+    expect_keywords: list[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any], source_file: str | None = None) -> "EvalCase":
@@ -48,6 +50,7 @@ class EvalCase:
             tags=list(data.get("tags") or []),
             tools=list(data.get("tools") or []),
             requires_tool_use=bool(data.get("requires_tool_use") or False),
+            expect_keywords=list(data.get("expect_keywords") or []),
         )
 
     def to_dict(self) -> dict[str, Any]:
