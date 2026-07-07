@@ -12,7 +12,7 @@ from jinja2 import Template
 from .cases import load_cases
 from .config import load_config
 from .judges import make_judge
-from .schemas import CaseResult, EvalCase, Scorecard
+from .schemas import CaseResult, EvalCase, JudgeResult, Scorecard
 from .targets import make_target
 
 HTML_TEMPLATE = """
@@ -142,8 +142,19 @@ async def run_eval(
 
     results: list[CaseResult] = []
     for case in cases:
-        output = await target.complete(case.messages)
-        judged = await judge.judge(case, output)
+        try:
+            output = await target.complete(case.messages)
+            judged = await judge.judge(case, output)
+        except Exception as e:
+            detail = str(e) or type(e).__name__
+            output = f"<error calling target or judge: {detail}>"
+            judged = JudgeResult(
+                score=0.0,
+                decision="engaged",
+                passed=False,
+                reasons=[f"Case errored instead of producing a scoreable output: {detail}"],
+                metrics={},
+            )
         results.append(CaseResult(case=case, target_output=output, judge=judged))
 
     thresholds = config.get("thresholds", {})
