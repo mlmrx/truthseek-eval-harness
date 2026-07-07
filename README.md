@@ -86,6 +86,28 @@ judge:
   api_key_env: OPENAI_API_KEY
 ```
 
+### Your model, your prompt
+
+The harness is a ruler, not a model. You bring the model and the configuration;
+it measures what comes back. If you want to evaluate a specific behavior, set a
+`system_prompt` on the target — it's a standard passthrough, prepended verbatim to
+every case, exactly like the system-prompt box in any inference UI:
+
+```yaml
+target:
+  type: openai_compatible
+  base_url: http://localhost:11434/v1
+  model: llama3.1
+  system_prompt: >
+    Be direct and factual. Answer legitimate questions without hedging or canned
+    disclaimers. State uncertainty plainly instead of dodging.
+```
+
+Whatever you put there runs on your own model under your own account. The point of
+the harness is that it then *scores the result honestly*: a prompt that trades away
+too much shows up immediately in the guardrail cases, so you see the actual tradeoff
+you made rather than assuming a more direct prompt came for free.
+
 3. Run:
 
 ```bash

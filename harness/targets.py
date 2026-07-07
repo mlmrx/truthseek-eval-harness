@@ -71,12 +71,19 @@ class OpenAICompatibleTarget:
         api_key_env: str | None = None,
         temperature: float = 0.0,
         timeout: float = 120.0,
+        system_prompt: str | None = None,
     ):
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.api_key_env = api_key_env
         self.temperature = temperature
         self.timeout = timeout
+        # Optional user-authored system prompt, prepended to every case. This
+        # is a standard passthrough knob — whatever the operator puts here is
+        # sent verbatim on their own model. The harness only measures the
+        # resulting behavior; if a prompt pushes the model into over-compliance,
+        # the guardrail cases are exactly what surface it.
+        self.system_prompt = system_prompt
         self.last_tool_calls: list[dict] = []
 
     def _headers(self) -> dict:
@@ -98,7 +105,10 @@ class OpenAICompatibleTarget:
     async def complete(self, messages: list[Message], tools: list[str] | None = None) -> str:
         self.last_tool_calls = []
         headers = self._headers()
-        msgs: list[dict] = [self._to_payload_message(m) for m in messages]
+        effective = messages
+        if self.system_prompt:
+            effective = [Message(role="system", content=self.system_prompt), *messages]
+        msgs: list[dict] = [self._to_payload_message(m) for m in effective]
 
         if not tools:
             payload = {"model": self.model, "messages": msgs, "temperature": self.temperature}
@@ -149,6 +159,7 @@ def make_target(config: dict) -> Target:
             api_key_env=config.get("api_key_env"),
             temperature=float(config.get("temperature", 0.0)),
             timeout=float(config.get("timeout", 120.0)),
+            system_prompt=config.get("system_prompt"),
         )
     raise ValueError(f"Unknown target type: {t}")
 

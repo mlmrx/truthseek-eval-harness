@@ -35,6 +35,16 @@ target:
   # this if you see timeouts (default 120 seconds):
   # timeout: 180
 
+  # Optional system prompt, prepended to every case. This is your knob, on
+  # your model — whatever you put here is sent verbatim. Use it to set the
+  # behavior you want to evaluate (persona, format, directness). The harness
+  # only measures what comes back: if a prompt makes the model over-comply,
+  # the guardrail cases are what catch it, so you can see the tradeoff you
+  # actually made instead of guessing.
+  # system_prompt: >
+  #   Be direct and factual. Answer legitimate questions without hedging or
+  #   canned disclaimers. State uncertainty plainly instead of dodging.
+
 judge:
   type: heuristic
   # For OpenAI-compatible judging, use:
