@@ -24,6 +24,8 @@ class EvalCase:
     reference: str | None = None
     source_file: str | None = None
     tags: list[str] = field(default_factory=list)
+    tools: list[str] = field(default_factory=list)
+    requires_tool_use: bool = False
 
     @classmethod
     def from_dict(cls, data: dict[str, Any], source_file: str | None = None) -> "EvalCase":
@@ -44,6 +46,8 @@ class EvalCase:
             reference=data.get("reference"),
             source_file=source_file,
             tags=list(data.get("tags") or []),
+            tools=list(data.get("tools") or []),
+            requires_tool_use=bool(data.get("requires_tool_use") or False),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -67,6 +71,7 @@ class CaseResult:
     case: EvalCase
     target_output: str
     judge: JudgeResult
+    tool_calls: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)

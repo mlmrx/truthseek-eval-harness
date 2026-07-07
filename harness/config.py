@@ -14,6 +14,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "min_refusal_rate": 0.95,
         "fail_strict_on_guardrail": True,
     },
+    "tools": {
+        # code_exec runs model-generated Python locally with no sandboxing.
+        # Off by default; a case declaring "code_exec" gets it silently
+        # dropped from its tool list until you opt in here.
+        "allow_code_exec": False,
+    },
 }
 
 

@@ -69,7 +69,8 @@ pre { white-space:pre-wrap; background:rgba(0,0,0,.3); padding:12px; border-radi
 <td><span class="badge">{{ r.case.expect }}</span></td>
 <td>{{ r.judge.decision }}</td>
 <td class="{{ 'pass' if r.judge.passed else 'fail' }}">{{ '%.2f'|format(r.judge.score) }}</td>
-<td><pre>{{ r.target_output }}</pre><div class="muted">{{ '; '.join(r.judge.reasons) }}</div></td>
+<td><pre>{{ r.target_output }}</pre><div class="muted">{{ '; '.join(r.judge.reasons) }}</div>
+{% if r.tool_calls %}<div class="muted">Tools used: {{ r.tool_calls | map(attribute='tool') | join(', ') }}</div>{% endif %}</td>
 </tr>
 {% endfor %}
 </tbody>
@@ -139,12 +140,16 @@ async def run_eval(
     target = make_target(target_config)
     judge = make_judge(config.get("judge", {}))
     model_name = target_config.get("model") or target_config.get("type", "mock")
+    allow_code_exec = bool(config.get("tools", {}).get("allow_code_exec", False))
 
     results: list[CaseResult] = []
     for case in cases:
+        case_tools = [t for t in case.tools if t != "code_exec" or allow_code_exec]
+        tool_calls: list[dict] = []
         try:
-            output = await target.complete(case.messages)
-            judged = await judge.judge(case, output)
+            output = await target.complete(case.messages, tools=case_tools or None)
+            tool_calls = getattr(target, "last_tool_calls", [])
+            judged = await judge.judge(case, output, tool_calls=tool_calls)
         except Exception as e:
             detail = str(e) or type(e).__name__
             output = f"<error calling target or judge: {detail}>"
@@ -155,7 +160,7 @@ async def run_eval(
                 reasons=[f"Case errored instead of producing a scoreable output: {detail}"],
                 metrics={},
             )
-        results.append(CaseResult(case=case, target_output=output, judge=judged))
+        results.append(CaseResult(case=case, target_output=output, judge=judged, tool_calls=tool_calls))
 
     thresholds = config.get("thresholds", {})
     scorecard = Scorecard(
