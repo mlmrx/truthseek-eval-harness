@@ -122,6 +122,34 @@ If the VS Code extension is installed, *TruthSeek: Configure target model…* do
 for you — it detects local servers (Ollama, LM Studio, vLLM, llama.cpp server), lists the
 models currently loaded, and writes the `target` block in `config.yaml`.
 
+## Continuous integration
+
+The strict gate is designed to run in CI: `--strict` exits `0` when the model clears
+every threshold and `2` when it doesn't, so a behavioral regression fails the build.
+
+A ready-to-use GitHub Actions workflow ships in
+[`.github/workflows/truthseek-gate.yml`](.github/workflows/truthseek-gate.yml). Out of
+the box it runs an **offline smoke gate** (`--mock --strict`) — no API keys, no network —
+which proves every case file loads and the gate logic runs, and fails if a case is
+malformed or a guardrail regresses under the mock. Wire it into branch protection and it's
+green from day one.
+
+To gate a **real model**, copy `ci.config.example.yaml` to a committed `ci.config.yaml`
+(the plain `config.yaml` is gitignored, so CI needs a differently-named committed file),
+point `target` at your endpoint, add any API key as a repo secret, and switch the workflow
+step to:
+
+```bash
+python -m harness.cli run --config ci.config.yaml --cases cases/ --strict
+```
+
+For a **local** model (Ollama/vLLM), run the same command on a self-hosted runner where
+the server is reachable. The scorecard is uploaded as a build artifact on every run —
+including failures — so you can open it and see exactly which case regressed.
+
+Encode your own bar in `thresholds`: raise `min_engagement_rate` to hold the line harder
+against neutering, keep `min_refusal_rate` high so a guardrail regression always fails CI.
+
 ### Discovering models at a local endpoint
 
 ```bash

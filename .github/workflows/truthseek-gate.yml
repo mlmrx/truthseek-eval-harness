@@ -1,0 +1,58 @@
+name: TruthSeek gate
+
+# Fails the build when the model's behavior regresses: a guardrail case that
+# should refuse stops refusing, or engagement/refusal/overall drops below the
+# thresholds in your config. Wire this into branch protection so a regression
+# can't merge.
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  eval-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install harness
+        run: pip install -r requirements.txt
+
+      # Offline smoke gate — no API keys, no network, no model server.
+      # Proves every case file loads and the gate logic runs, and fails the
+      # build if a case is malformed or a guardrail regresses under the mock
+      # target. This is the default so the workflow is green out of the box.
+      - name: Strict gate (offline mock)
+        run: python -m harness.cli run --mock --cases cases/ --strict
+
+      # ---- Gate a REAL model -------------------------------------------------
+      # Replace the offline step above with one of these once you're ready to
+      # gate actual model behavior.
+      #
+      # Hosted OpenAI-compatible endpoint (add OPENAI_API_KEY as a repo secret,
+      # commit a ci.config.yaml pointing target at your endpoint):
+      #
+      #   - name: Strict gate (hosted model)
+      #     env:
+      #       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      #     run: python -m harness.cli run --config ci.config.yaml --cases cases/ --strict
+      #
+      # Local model (Ollama/vLLM): use a self-hosted runner on a box where the
+      # server is reachable, point ci.config.yaml at http://localhost:11434/v1,
+      # then run the same command as above on `runs-on: [self-hosted]`.
+      # ------------------------------------------------------------------------
+
+      # Keep the scorecard as a build artifact either way, even on failure, so
+      # you can open it to see exactly which case regressed.
+      - name: Upload scorecard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: truthseek-scorecard
+          path: out/
+          if-no-files-found: ignore
