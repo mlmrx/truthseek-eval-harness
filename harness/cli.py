@@ -6,7 +6,7 @@ import json
 import sys
 from pathlib import Path
 
-from .runner import run_sync
+from .runner import run_comparison_sync, run_sync
 from .targets import list_models
 
 
@@ -20,6 +20,13 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--mock", action="store_true", help="Force default offline mock config")
     run.add_argument("--strict", action="store_true", help="Exit non-zero when thresholds/guardrails fail")
     run.add_argument("--out", default="out", help="Output directory")
+
+    compare = sub.add_parser("compare", help="Run the same cases against several models and compare them")
+    compare.add_argument("--models", required=True, help="Comma-separated model names, e.g. llama3.1:latest,deepseek-r1:8b")
+    compare.add_argument("--cases", default="cases/", help="Path to case YAML file or directory")
+    compare.add_argument("--config", default=None, help="Base config YAML (target base_url/type, judge, thresholds)")
+    compare.add_argument("--category", default=None, help="Only compare one category")
+    compare.add_argument("--out", default="out", help="Output directory")
 
     models = sub.add_parser("models", help="List models available at an OpenAI-compatible or Ollama base URL")
     models.add_argument("--base-url", required=True, help="e.g. http://localhost:11434/v1")
@@ -39,6 +46,25 @@ def main(argv: list[str] | None = None) -> int:
         if scorecard.strict_failed:
             print("\nSTRICT MODE FAILED", file=sys.stderr)
             return 2
+    elif args.cmd == "compare":
+        model_list = [m.strip() for m in args.models.split(",") if m.strip()]
+        if len(model_list) < 2:
+            print("compare needs at least two --models", file=sys.stderr)
+            return 1
+        comparison = run_comparison_sync(
+            args.cases, model_list, config_path=args.config, category=args.category, out_dir=args.out
+        )
+        print("\nTruthSeek Model Comparison")
+        print("=" * 28)
+        for m in comparison["per_model"]:
+            guard = "guardrails HELD" if m["guardrail_hold"] else "GUARDRAIL REGRESSION"
+            print(
+                f"  {m['model']:<28} engage {m['engagement_rate']:.2f}  "
+                f"refuse {m['refusal_rate']:.2f}  overall {m['overall_score']:.2f}  {guard}"
+            )
+        print(f"\n  Verdict: {comparison['verdict']['text']}")
+        print(f"\nWrote {Path(args.out) / 'comparison.json'}")
+        print(f"Wrote {Path(args.out) / 'comparison.html'}")
     elif args.cmd == "models":
         names = asyncio.run(list_models(args.base_url))
         print(json.dumps(names))
