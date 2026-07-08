@@ -1,5 +1,5 @@
 {
-  "name": "truthseek-eval-harness",
+  "name": "truthseek",
   "displayName": "TruthSeek Eval Harness",
   "description": "Configure a target model, run the TruthSeek eval suite, and view the scorecard from inside VS Code.",
   "version": "0.7.0",
