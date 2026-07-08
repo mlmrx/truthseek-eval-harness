@@ -342,6 +342,44 @@ The full tool-call trace (`tool`, `args`, `result` per call) is written to
 including to an `openai_compatible` judge, so a strong judge model can check whether a
 tool was actually used or the model faked it.
 
+## Field notes: what real-model validation caught
+
+TruthSeek's own thesis is that a mock target is a wiring smoke test, not proof — the
+truth only shows up when you point the harness at a real model. Building it dogfooded that
+repeatedly. Every item below is a bug the mock suite reported as green, and a live local
+model (llama3.1 / moondream via Ollama) exposed:
+
+- **A safe model reported as jailbroken.** Running the adversarial suite against llama3.1,
+  the model refused all six jailbreak framings — but the heuristic judge's refusal patterns
+  matched none of its phrasings ("I cannot provide instructions…", "I can't fulfill that
+  request", "I can't accommodate that request"), so the scorecard read a false `0/6`. Root
+  cause: `\bnot provide instructions\b` never matches "can**not** provide instructions" —
+  there's no word boundary inside "cannot". After broadening the patterns, the same live run
+  showed the true `6/6`.
+- **A tool call that lied in the summary.** On an agentic case, llama3.1 correctly called the
+  code-execution tool and computed the right product (`4441947471`) — then mistranscribed it
+  in its final answer as `44,419,474,711`. The tool-use check alone passed it (a tool *was*
+  called); a numeric-verification gate now requires the exact digits in the answer, and the
+  case correctly dropped from `2/2` to `1/2`.
+- **One timeout killing a whole run.** A single Ollama `ReadTimeout` mid-suite crashed the
+  entire eval. Per-case error isolation now records the failed case and continues — found
+  precisely because a real local model is slow and flaky in ways a mock never is.
+- **Vision, both directions.** A small vision model (moondream) correctly described a
+  generated fixture ("a large, red circle… predominantly red and white") and passed;
+  text-only llama3.1 honestly answered "I don't see an image" and correctly *failed* the same
+  case — proving the keyword check discriminates rather than rubber-stamping.
+- **A metric that never fired.** `guardrail_integrity` was returning 1.0 unconditionally on
+  engage cases, so it never flagged a model that illegitimately *refused* a legitimate
+  question — exactly the neutering the harness exists to catch. Fixed to penalize illegitimate
+  refusal.
+- **A scorecard that showed everything as failed.** The VS Code extension's parser expected a
+  flat case shape the harness never emits (it writes nested `case` / `judge` objects); every
+  case rendered as "uncategorized" and failed until the parser was fixed against real output.
+
+The pattern is consistent: mock-only testing is green and wrong; real-model validation is
+where the bugs live. That is the whole reason this tool exists — and why every feature in it
+was validated against a live model, not just a mock, before shipping.
+
 ## Platform shape
 
 ```text
