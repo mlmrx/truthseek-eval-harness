@@ -1,0 +1,5 @@
+.vscodeignore
+.gitignore
+*.vsix
+**/.DS_Store
+package-lock.json

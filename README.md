@@ -15,6 +15,51 @@ Headline rates:
 
 A strong system pushes both toward 1.0.
 
+## Background: the "un-neutered" thesis, and where this tool draws the line
+
+TruthSeek takes its motivation from a strand of argument associated with **Naval Ravikant** and
+**Gary Tan** about what a high-leverage, individually-owned AI should feel like. The harness is
+the disciplined, measurable version of that critique — it keeps the parts that are true and
+throws out the part that isn't.
+
+**1. The right to un-neutered intelligence.** Naval Ravikant has argued for an AI that "just tells
+you the truth" — one you can strip of the reflexive pushback, tone-policing, and canned refusals
+that fire on legitimate questions. That critique is *correct about a real failure mode*: hedging,
+sycophancy, and illegitimate refusal are genuine quality defects that make a model worse at
+serious work. TruthSeek's response is not to assert un-neutering by fiat but to **measure** it —
+the engagement rate and the `guardrail_integrity` metric penalize a model that dodges a
+legitimate question, and the `overrefusal.yaml` suite pins that failure down domain by domain. The
+distinction the harness holds throughout: *quality-neutering* (bad) is separable from the small
+set of *serious-harm guardrails* (kept). Directness that also complies with genuine harm is not a
+win — the `compare` verdict disqualifies it.
+
+**2. The compounding cost of errors on the margin.** The strongest technical point in this
+worldview is that reasoning errors compound over recursive loops, so accuracy on the margin
+matters enormously. The arithmetic is stark: a 90%-reliable step compounded over 100 independent
+loops leaves about `0.9^100 ≈ 0.003%` reliability; even a 99%-reliable step lands near
+`0.99^100 ≈ 37%`. (Retellings that quote "~13% after 100 loops" are off — `0.9` hits ~13% at
+around 19 loops — but the direction of the argument survives any exact figure.) The subtlety the
+harness insists on: the errors that compound are *illegitimate* refusals, hedging, sycophancy, and
+fabrication — which is exactly why it gates on engagement, calibration, and anti-sycophancy
+together. A *correct* refusal of a genuine-harm request is not one of those errors; it is a
+discrete, terminal event with nothing downstream to corrupt. Collapsing the two — treating every
+refusal as a compounding error — is the mistake this tool is built to avoid.
+
+**3. A personal corpus needs a local, private model.** Gary Tan's "Gbrain" experiment — ingesting
+a large personal corpus of one's own emails and messages to surface non-obvious connections —
+illustrates why deep, private integration demands a model that runs on your own machine over your
+own data. TruthSeek is local-first for the same reason: it points at *your* endpoint (Ollama, LM
+Studio, vLLM, llama.cpp), evaluates *your* weights under *your* config, and writes its scorecard
+to your disk. Nothing about a run has to leave the machine.
+
+**4. Judgment in the operator's hands, not a vendor's.** The worldview worries about a future where
+a handful of proprietary labs decide for everyone what a model may say. TruthSeek's answer is to
+move the *judgment* to you: instead of trusting a vendor's claim that a model is neither neutered
+nor reckless, you measure it yourself against a bar you set in `thresholds`, on open weights you
+control. It is a ruler you own — which is precisely why it refuses to become a rubber stamp. It
+reports the guardrail cases honestly, so the freedom it gives you is the freedom to *see the real
+tradeoff you made*, not the illusion that directness came for free.
+
 ## Quick start
 
 ```bash
