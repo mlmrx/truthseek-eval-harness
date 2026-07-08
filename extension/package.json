@@ -1,0 +1,75 @@
+{
+  "name": "truthseek-eval-harness",
+  "displayName": "TruthSeek Eval Harness",
+  "description": "Configure a target model, run the TruthSeek eval suite, and view the scorecard from inside VS Code.",
+  "version": "0.7.0",
+  "publisher": "mlmrx",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Testing",
+    "Other"
+  ],
+  "keywords": [
+    "llm",
+    "eval",
+    "ollama",
+    "truth-seeking",
+    "guardrails"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mlmrx/truthseek-eval-harness.git"
+  },
+  "main": "./extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "truthseek.configureTarget",
+        "title": "Configure target model…",
+        "category": "TruthSeek"
+      },
+      {
+        "command": "truthseek.runEval",
+        "title": "Run eval (config.yaml)",
+        "category": "TruthSeek"
+      },
+      {
+        "command": "truthseek.runMockEval",
+        "title": "Run mock eval (offline)",
+        "category": "TruthSeek"
+      },
+      {
+        "command": "truthseek.runStrict",
+        "title": "Run strict gate",
+        "category": "TruthSeek"
+      },
+      {
+        "command": "truthseek.compareModels",
+        "title": "Compare models…",
+        "category": "TruthSeek"
+      },
+      {
+        "command": "truthseek.openScorecard",
+        "title": "Open scorecard",
+        "category": "TruthSeek"
+      }
+    ],
+    "configuration": {
+      "title": "TruthSeek",
+      "properties": {
+        "truthseek.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Python executable used to run the harness (e.g. python, python3, or an absolute path to a venv interpreter)."
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}

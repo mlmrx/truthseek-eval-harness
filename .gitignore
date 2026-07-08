@@ -3,3 +3,5 @@ __pycache__/
 .vs/
 config.yaml
 out/
+node_modules/
+*.vsix
