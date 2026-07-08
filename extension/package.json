@@ -3,7 +3,7 @@
   "displayName": "TruthSeek Eval Harness",
   "description": "Configure a target model, run the TruthSeek eval suite, and view the scorecard from inside VS Code.",
   "version": "0.7.0",
-  "publisher": "mlmrx",
+  "publisher": "UnifyDynamics",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
